@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>North Carolina Early Voting</title>
+  <style>
+    body { margin: 0; padding: 16px; background: transparent; }
+    .widget {
+      max-width: 650px; margin: 0 auto; padding: 22px;
+      border: 1px solid #d9d9d9; background: #fff;
+      color: #202020; font: 15px/1.4 Arial, sans-serif;
+      box-sizing: border-box;
+    }
+    .widget * { box-sizing: border-box; }
+    .eyebrow {
+      color: #666; font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .total {
+      margin: 12px 0 2px; font-size: clamp(36px, 8vw, 54px);
+      font-weight: 700; letter-spacing: -2px;
+    }
+    .subtitle, .muted { color: #666; }
+    .subtitle { font-size: 14px; }
+    .stats {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px; margin-top: 24px;
+    }
+    .stat { padding: 16px; background: #f4f5f6; }
+    .stat strong { display: block; margin-bottom: 5px; font-size: 25px; }
+    .stat span { color: #666; font-size: 12px; }
+    .footer {
+      margin-top: 22px; padding-top: 12px;
+      border-top: 1px solid #ddd; color: #777; font-size: 11px;
+    }
+    .status { margin-top: 8px; color: #777; font-size: 11px; }
+    .error { color: #a33; }
+    @media (max-width: 360px) {
+      .widget { padding: 16px; }
+      .stat { padding: 12px; }
+      .stat strong { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="widget" aria-label="North Carolina early-voting statistics">
+    <div class="eyebrow">North Carolina Early Voting</div>
+    <div class="total" id="total">Loading…</div>
+    <div class="subtitle">Total ballots cast</div>
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="turnout">—</strong>
+        <span>Registered voter turnout</span>
+      </div>
+      <div class="stat">
+        <strong id="in-person">—</strong>
+        <span>In-person ballots</span>
+      </div>
+      <div class="stat">
+        <strong id="mail">—</strong>
+        <span>Mail ballots</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Source: <a href="https://ncfree.org/early-voting-tracker/" target="_blank" rel="noopener">NCFREE</a>
+      · Data through <span id="data-date">—</span>
+    </div>
+    <div class="status" id="status" aria-live="polite">Retrieving latest published figures…</div>
+  </section>
+
+  <script>
+    // Replace this URL after enabling GitHub Pages for your repository.
+    const DATA_URL = "https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/data.json";
+
+    const number = value => Number(value).toLocaleString("en-US");
+
+    async function refresh() {
+      const status = document.getElementById("status");
+      try {
+        const response = await fetch(DATA_URL + "?v=" + Date.now(), {
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("Feed returned HTTP " + response.status);
+        const data = await response.json();
+
+        if (!Number.isFinite(data.total) ||
+            !Number.isFinite(data.turnout) ||
+            !Number.isFinite(data.in_person) ||
+            !Number.isFinite(data.mail)) {
+          throw new Error("The data feed is incomplete.");
+        }
+
+        document.getElementById("total").textContent = number(data.total);
+        document.getElementById("turnout").textContent = data.turnout + "%";
+        document.getElementById("in-person").textContent = number(data.in_person);
+        document.getElementById("mail").textContent = number(data.mail);
+        document.getElementById("data-date").textContent = data.data_through;
+        status.textContent = "Last checked: " +
+          new Date(data.checked_at).toLocaleString("en-US", {
+            timeZone: "America/New_York",
+            dateStyle: "medium",
+            timeStyle: "short"
+          }) + " ET";
+        status.classList.remove("error");
+      } catch (error) {
+        status.textContent = "Unable to retrieve the latest figures. Previously published figures, if available, may be out of date.";
+        status.classList.add("error");
+        console.error("NCFREE widget:", error);
+      }
+    }
+
+    refresh();
+    // The feed itself is updated hourly by GitHub Actions.
+    setInterval(refresh, 15 * 60 * 1000);
+  </script>
+</body>
+</html>
