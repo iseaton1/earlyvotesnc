@@ -78,6 +78,7 @@ try {
     () => document.body.innerText.includes("Ballots cast") &&
           document.body.innerText.includes("Voted in person") &&
           document.body.innerText.includes("Voted by mail"),
+    undefined,
     { timeout: 90000 }
   );
 
